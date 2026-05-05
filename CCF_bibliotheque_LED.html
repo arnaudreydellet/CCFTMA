@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCF — L'éclairage LED de la bibliothèque sur mesure</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f4f6f8;
+    color: #222;
+    line-height: 1.6;
+  }
+  /* Bandeau type CCF */
+  .bandeau-ccf {
+    background: white;
+    border: 2px solid #1a4d7a;
+    border-radius: 6px;
+    margin-bottom: 25px;
+    overflow: hidden;
+  }
+  .bandeau-header {
+    background: #1a4d7a;
+    color: white;
+    padding: 14px 22px;
+    text-align: center;
+  }
+  .bandeau-header h1 {
+    margin: 0;
+    font-size: 1.3em;
+    letter-spacing: 1px;
+  }
+  .bandeau-header .sous-titre {
+    font-size: 0.95em;
+    margin-top: 4px;
+    opacity: 0.9;
+  }
+  .bandeau-info {
+    padding: 12px 22px;
+    background: #f0f7ff;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px 30px;
+    font-size: 0.95em;
+  }
+  .bandeau-info strong { color: #0d47a1; }
+
+  /* Mise en situation */
+  .situation {
+    background: #fffde7;
+    border-left: 5px solid #fbc02d;
+    padding: 18px 22px;
+    border-radius: 6px;
+    margin-bottom: 25px;
+  }
+  .situation h2 {
+    margin-top: 0;
+    color: #f57f17;
+    font-size: 1.1em;
+  }
+  .situation p { margin: 8px 0; }
+
+  /* Document support */
+  .document {
+    background: #f5f5f5;
+    border: 2px dashed #888;
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin: 20px 0;
+  }
+  .document h2 {
+    margin-top: 0;
+    color: #424242;
+    font-size: 1.05em;
+  }
+  .document .ref {
+    font-size: 0.85em;
+    color: #666;
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+
+  /* Partie de l'exercice */
+  .partie-titre {
+    color: white;
+    background: #1a4d7a;
+    padding: 12px 20px;
+    border-radius: 5px;
+    margin-top: 35px;
+    margin-bottom: 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+  }
+  .partie-titre .pts-partie {
+    float: right;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 12px;
+    border-radius: 12px;
+    font-size: 0.9em;
+  }
+
+  .question {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  .question h3 {
+    margin-top: 0;
+    color: #1a4d7a;
+  }
+  .question .competence {
+    display: inline-block;
+    background: #e1f5fe;
+    color: #0277bd;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    margin-bottom: 8px;
+    border: 1px solid #4fc3f7;
+  }
+  .question h3 .pts {
+    font-size: 0.85em;
+    color: #e65100;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+  .brouillon {
+    background: #f5f5f5;
+    border: 1px dashed #999;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 10px 0;
+    font-style: italic;
+    color: #555;
+    font-size: 0.95em;
+  }
+  .brouillon::before { content: "✏️ "; }
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+  }
+  input[type="number"] {
+    padding: 8px 12px;
+    font-size: 1em;
+    border: 2px solid #bbb;
+    border-radius: 5px;
+    width: 130px;
+  }
+  textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    font-family: inherit;
+    border: 2px solid #bbb;
+    border-radius: 5px;
+    resize: vertical;
+    min-height: 90px;
+  }
+  input:focus, textarea:focus { outline: none; border-color: #1976d2; }
+  .unite { font-weight: bold; color: #555; }
+  button {
+    background: #1976d2;
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-weight: 600;
+    transition: background 0.2s;
+    margin-top: 10px;
+  }
+  button:hover { background: #0d47a1; }
+  button:disabled { background: #999; cursor: not-allowed; }
+  .feedback {
+    margin-top: 12px;
+    padding: 10px 15px;
+    border-radius: 5px;
+    display: none;
+  }
+  .feedback.correct {
+    background: #c8e6c9;
+    border-left: 4px solid #2e7d32;
+    color: #1b5e20;
+  }
+  .feedback.indice {
+    background: #fff3e0;
+    border-left: 4px solid #ef6c00;
+    color: #5d3a00;
+  }
+  .feedback.solution {
+    background: #ffe0b2;
+    border-left: 4px solid #e65100;
+    color: #4e2700;
+  }
+  .progression {
+    background: #fff;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+    color: #1a4d7a;
+    border: 1px solid #ddd;
+  }
+  .schema-container {
+    background: #fafafa;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    text-align: center;
+  }
+  .schema-container svg {
+    max-width: 100%;
+    height: auto;
+  }
+  .schema-titre {
+    font-weight: bold;
+    color: #1a4d7a;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ BANDEAU CCF ============ -->
+<div class="bandeau-ccf">
+  <div class="bandeau-header">
+    <h1>CONTRÔLE EN COURS DE FORMATION (CCF)</h1>
+    <div class="sous-titre">Mathématiques – Physique-Chimie · Session 2025</div>
+  </div>
+  <div class="bandeau-info">
+    <div><strong>Spécialité :</strong> Technicien Menuisier Agenceur</div>
+    <div><strong>Classe :</strong> 1<sup>re</sup> TMA</div>
+    <div><strong>Module :</strong> Transporter l'énergie sous forme électrique</div>
+    <div><strong>Durée :</strong> 45 minutes</div>
+    <div><strong>Compétences évaluées :</strong> S'approprier · Analyser · Réaliser · Valider</div>
+    <div><strong>Examinateur :</strong> M. REYDELLET</div>
+  </div>
+</div>
+
+<div class="progression">
+  Score : <span id="score">0</span> / 11 questions validées &nbsp;|&nbsp; Total : 20 points
+</div>
+
+<!-- ============ MISE EN SITUATION ============ -->
+<div class="situation">
+  <h2>📋 Mise en situation</h2>
+  <p>Vous travaillez en stage chez <strong>« Bois & Création »</strong>, une menuiserie d'agencement spécialisée dans le mobilier sur mesure. Votre patron, M. Lefèvre, vous confie la finition d'une <strong>bibliothèque haut de gamme</strong> commandée par un client pour son salon.</p>
+  <p>Le client a demandé un <strong>éclairage LED intégré</strong> sur deux niveaux :</p>
+  <ul>
+    <li>un <strong>bandeau supérieur</strong> qui éclaire la corniche du haut (lumière douce d'ambiance) ;</li>
+    <li>un <strong>bandeau inférieur</strong> qui éclaire les trois étagères du bas (lumière fonctionnelle pour mettre en valeur les objets exposés).</li>
+  </ul>
+  <p>L'ensemble est alimenté par un <strong>transformateur unique de 12 V</strong> caché dans le socle de la bibliothèque. Avant la livraison, vous devez <strong>vérifier que l'installation électrique est correcte</strong> et qu'elle respecte les limites du transformateur.</p>
+</div>
+
+<!-- ============ DOCUMENT SUPPORT ============ -->
+<div class="document">
+  <h2>📎 Document support — Fiche technique du transformateur</h2>
+  <div class="ref">Réf. transformateur : TR-12V-2A — fournisseur LumiLed</div>
+  <ul style="margin: 8px 0;">
+    <li>Tension de sortie : <strong>U = 12 V</strong></li>
+    <li>Intensité maximale fournie : <strong>I<sub>max</sub> = 2 A</strong></li>
+    <li>Au-delà de cette intensité, le transformateur risque la surchauffe et peut être endommagé.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- PARTIE 1 : Bandeau supérieur (série) -->
+<!-- ============================================================ -->
+
+<div class="partie-titre">
+  Partie A — Le bandeau supérieur (corniche)
+  <span class="pts-partie">8 points</span>
+</div>
+
+<p>Le bandeau supérieur est constitué de <strong>deux LED principales</strong> et d'une <strong>résistance d'équilibrage</strong> branchées <strong>en série</strong> sur le transformateur 12 V. Le schéma est le suivant :</p>
+
+<div class="schema-container">
+  <div class="schema-titre">Schéma du bandeau supérieur (circuit en série)</div>
+  <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg">
+    <!-- Boucle -->
+    <line x1="80" y1="100" x2="620" y2="100" stroke="#222" stroke-width="2"/>
+    <line x1="620" y1="100" x2="620" y2="240" stroke="#222" stroke-width="2"/>
+    <line x1="620" y1="240" x2="80" y2="240" stroke="#222" stroke-width="2"/>
+    <line x1="80" y1="240" x2="80" y2="190" stroke="#222" stroke-width="2"/>
+    <line x1="80" y1="150" x2="80" y2="100" stroke="#222" stroke-width="2"/>
+
+    <!-- Transformateur -->
+    <line x1="60" y1="145" x2="100" y2="145" stroke="#222" stroke-width="3"/>
+    <line x1="70" y1="170" x2="90" y2="170" stroke="#222" stroke-width="2"/>
+    <text x="20" y="135" font-size="13" fill="#1976d2" font-weight="bold">12 V</text>
+    <text x="10" y="200" font-size="11" fill="#666">transfo.</text>
+
+    <!-- LED 1 -->
+    <rect x="170" y="80" width="70" height="40" fill="#fff" stroke="#222" stroke-width="2"/>
+    <polygon points="187,92 187,108 203,100" fill="#fff" stroke="#222" stroke-width="1.5"/>
+    <line x1="203" y1="92" x2="203" y2="108" stroke="#222" stroke-width="1.5"/>
+    <text x="213" y="105" font-size="11" fill="#222">LED 1</text>
+    <text x="178" y="140" font-size="11" fill="#1976d2" font-weight="bold">U_LED1 = 4 V</text>
+
+    <!-- LED 2 -->
+    <rect x="320" y="80" width="70" height="40" fill="#fff" stroke="#222" stroke-width="2"/>
+    <polygon points="337,92 337,108 353,100" fill="#fff" stroke="#222" stroke-width="1.5"/>
+    <line x1="353" y1="92" x2="353" y2="108" stroke="#222" stroke-width="1.5"/>
+    <text x="363" y="105" font-size="11" fill="#222">LED 2</text>
+    <text x="328" y="140" font-size="11" fill="#1976d2" font-weight="bold">U_LED2 = 4 V</text>
+
+    <!-- Résistance équilibrage -->
+    <rect x="475" y="85" width="100" height="30" fill="#fff" stroke="#222" stroke-width="2"/>
+    <text x="490" y="105" font-size="11" fill="#222">R équilibrage</text>
+    <text x="495" y="140" font-size="11" fill="#1976d2" font-weight="bold">U_R = ?</text>
+
+    <!-- Sens courant -->
+    <polygon points="140,95 155,100 140,105" fill="#d32f2f"/>
+    <text x="105" y="80" font-size="12" fill="#d32f2f" font-weight="bold">sens du courant</text>
+
+    <!-- I mesuré -->
+    <text x="290" y="265" font-size="13" fill="#d32f2f" font-weight="bold">I mesuré dans la LED 1 = 0,3 A</text>
+  </svg>
+</div>
+
+<div class="question" data-q="1">
+  <span class="competence">S'approprier</span>
+  <h3>1. Quelle est l'intensité du courant qui traverse la <strong>LED 2</strong> ? <span class="pts">(1 pt)</span></h3>
+  <div class="brouillon">Rappel : dans un circuit en série, l'intensité est la même partout.</div>
+  <div class="input-row">
+    <span>I<sub>LED2</sub> =</span>
+    <input type="number" step="0.01" id="q1-input">
+    <span class="unite">A</span>
+    <button onclick="verifier(1)">Valider</button>
+  </div>
+  <div class="feedback" id="q1-feedback"></div>
+</div>
+
+<div class="question" data-q="2">
+  <span class="competence">S'approprier</span>
+  <h3>2. Quelle est l'intensité du courant qui traverse la <strong>résistance d'équilibrage</strong> ? <span class="pts">(1 pt)</span></h3>
+  <div class="brouillon">Même principe : circuit en série donc intensité identique sur tous les dipôles.</div>
+  <div class="input-row">
+    <span>I<sub>R</sub> =</span>
+    <input type="number" step="0.01" id="q2-input">
+    <span class="unite">A</span>
+    <button onclick="verifier(2)">Valider</button>
+  </div>
+  <div class="feedback" id="q2-feedback"></div>
+</div>
+
+<div class="question" data-q="3">
+  <span class="competence">Réaliser</span>
+  <h3>3. En appliquant la <strong>loi des mailles</strong>, calculer la tension aux bornes de la résistance d'équilibrage. <span class="pts">(3 pts)</span></h3>
+  <div class="brouillon">U_transformateur = U_LED1 + U_LED2 + U_R. Tu connais U_transformateur, U_LED1 et U_LED2. Isole U_R.</div>
+  <div class="input-row">
+    <span>U<sub>R</sub> =</span>
+    <input type="number" step="0.01" id="q3-input">
+    <span class="unite">V</span>
+    <button onclick="verifier(3)">Valider</button>
+  </div>
+  <div class="feedback" id="q3-feedback"></div>
+</div>
+
+<div class="question" data-q="4">
+  <span class="competence">Valider</span>
+  <h3>4. Vérification : calculer la somme U<sub>LED1</sub> + U<sub>LED2</sub> + U<sub>R</sub>. La loi des mailles est-elle respectée ? <span class="pts">(3 pts)</span></h3>
+  <div class="brouillon">Additionne les trois tensions. Tu dois retomber sur 12 V (la tension du transformateur).</div>
+  <div class="input-row">
+    <span>Somme =</span>
+    <input type="number" step="0.01" id="q4-input">
+    <span class="unite">V</span>
+    <button onclick="verifier(4)">Valider</button>
+  </div>
+  <div class="feedback" id="q4-feedback"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PARTIE 2 : Bandeau inférieur (dérivation) -->
+<!-- ============================================================ -->
+
+<div class="partie-titre">
+  Partie B — Le bandeau inférieur (3 étagères)
+  <span class="pts-partie">8 points</span>
+</div>
+
+<p>Le bandeau inférieur est constitué de <strong>trois spots LED</strong> branchés <strong>en dérivation</strong> sur le même transformateur 12 V (un spot par étagère). Chaque spot a une intensité différente selon sa puissance lumineuse.</p>
+
+<div class="schema-container">
+  <div class="schema-titre">Schéma du bandeau inférieur (circuit en dérivation)</div>
+  <svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg">
+    <!-- Transformateur -->
+    <line x1="50" y1="200" x2="90" y2="200" stroke="#222" stroke-width="3"/>
+    <line x1="60" y1="230" x2="80" y2="230" stroke="#222" stroke-width="2"/>
+    <text x="15" y="220" font-size="13" fill="#1976d2" font-weight="bold">12 V</text>
+    <text x="10" y="245" font-size="10" fill="#666">transfo.</text>
+
+    <!-- Fil sortie haut -->
+    <line x1="70" y1="200" x2="70" y2="80" stroke="#222" stroke-width="2"/>
+    <line x1="70" y1="80" x2="380" y2="80" stroke="#222" stroke-width="2"/>
+
+    <!-- I_total mesuré -->
+    <polygon points="180,75 195,80 180,85" fill="#d32f2f"/>
+    <text x="135" y="68" font-size="12" fill="#d32f2f" font-weight="bold">I_total bandeau bas = ?</text>
+
+    <!-- Rail vertical droit -->
+    <line x1="650" y1="80" x2="650" y2="340" stroke="#222" stroke-width="2"/>
+    <line x1="650" y1="340" x2="650" y2="420" stroke="#222" stroke-width="2"/>
+    <line x1="650" y1="420" x2="70" y2="420" stroke="#222" stroke-width="2"/>
+    <line x1="70" y1="420" x2="70" y2="240" stroke="#222" stroke-width="2"/>
+
+    <!-- Rail vertical gauche -->
+    <line x1="380" y1="80" x2="380" y2="340" stroke="#222" stroke-width="2"/>
+
+    <!-- Nœuds gauche -->
+    <circle cx="380" cy="80" r="4" fill="#222"/>
+    <circle cx="380" cy="200" r="4" fill="#222"/>
+    <circle cx="380" cy="340" r="4" fill="#222"/>
+
+    <!-- Nœuds droite -->
+    <circle cx="650" cy="80" r="4" fill="#222"/>
+    <circle cx="650" cy="200" r="4" fill="#222"/>
+    <circle cx="650" cy="340" r="4" fill="#222"/>
+
+    <!-- Branche 1 : Spot étagère du haut -->
+    <line x1="380" y1="80" x2="650" y2="80" stroke="#222" stroke-width="2"/>
+    <rect x="495" y="60" width="60" height="40" fill="#fff" stroke="#222" stroke-width="2"/>
+    <polygon points="510,72 510,88 525,80" fill="#fff" stroke="#222" stroke-width="1.5"/>
+    <line x1="525" y1="72" x2="525" y2="88" stroke="#222" stroke-width="1.5"/>
+    <text x="535" y="85" font-size="10" fill="#222">LED</text>
+    <text x="475" y="125" font-size="12" fill="#222">Spot étagère haute</text>
+    <text x="395" y="65" font-size="12" fill="#d32f2f" font-weight="bold">I_1 = 0,4 A</text>
+
+    <!-- Branche 2 : Spot étagère milieu -->
+    <line x1="380" y1="200" x2="650" y2="200" stroke="#222" stroke-width="2"/>
+    <rect x="495" y="180" width="60" height="40" fill="#fff" stroke="#222" stroke-width="2"/>
+    <polygon points="510,192 510,208 525,200" fill="#fff" stroke="#222" stroke-width="1.5"/>
+    <line x1="525" y1="192" x2="525" y2="208" stroke="#222" stroke-width="1.5"/>
+    <text x="535" y="205" font-size="10" fill="#222">LED</text>
+    <text x="475" y="245" font-size="12" fill="#222">Spot étagère milieu</text>
+    <text x="395" y="180" font-size="12" fill="#d32f2f" font-weight="bold">I_2 = 0,3 A</text>
+
+    <!-- Branche 3 : Spot étagère basse -->
+    <line x1="380" y1="340" x2="650" y2="340" stroke="#222" stroke-width="2"/>
+    <rect x="495" y="320" width="60" height="40" fill="#fff" stroke="#222" stroke-width="2"/>
+    <polygon points="510,332 510,348 525,340" fill="#fff" stroke="#222" stroke-width="1.5"/>
+    <line x1="525" y1="332" x2="525" y2="348" stroke="#222" stroke-width="1.5"/>
+    <text x="535" y="345" font-size="10" fill="#222">LED</text>
+    <text x="478" y="385" font-size="12" fill="#222">Spot étagère basse</text>
+    <text x="395" y="320" font-size="12" fill="#d32f2f" font-weight="bold">I_3 = 0,5 A</text>
+  </svg>
+</div>
+
+<div class="question" data-q="5">
+  <span class="competence">Réaliser</span>
+  <h3>5. En appliquant la <strong>loi des nœuds</strong>, calculer l'intensité totale qui traverse le bandeau inférieur (à la sortie du transformateur, avant le premier nœud). <span class="pts">(3 pts)</span></h3>
+  <div class="brouillon">I_total = I_1 + I_2 + I_3. Additionne les trois intensités.</div>
+  <div class="input-row">
+    <span>I<sub>total bas</sub> =</span>
+    <input type="number" step="0.01" id="q5-input">
+    <span class="unite">A</span>
+    <button onclick="verifier(5)">Valider</button>
+  </div>
+  <div class="feedback" id="q5-feedback"></div>
+</div>
+
+<div class="question" data-q="6">
+  <span class="competence">S'approprier</span>
+  <h3>6. Quelle est la tension aux bornes du <strong>spot de l'étagère du haut</strong> (LED 1) ? <span class="pts">(1 pt)</span></h3>
+  <div class="brouillon">Rappel : en dérivation, chaque branche reçoit la même tension que le générateur.</div>
+  <div class="input-row">
+    <span>U<sub>1</sub> =</span>
+    <input type="number" step="0.01" id="q6-input">
+    <span class="unite">V</span>
+    <button onclick="verifier(6)">Valider</button>
+  </div>
+  <div class="feedback" id="q6-feedback"></div>
+</div>
+
+<div class="question" data-q="7">
+  <span class="competence">S'approprier</span>
+  <h3>7. Quelle est la tension aux bornes du <strong>spot de l'étagère du milieu</strong> (LED 2) ? <span class="pts">(1 pt)</span></h3>
+  <div class="brouillon">Même principe que la question précédente.</div>
+  <div class="input-row">
+    <span>U<sub>2</sub> =</span>
+    <input type="number" step="0.01" id="q7-input">
+    <span class="unite">V</span>
+    <button onclick="verifier(7)">Valider</button>
+  </div>
+  <div class="feedback" id="q7-feedback"></div>
+</div>
+
+<div class="question" data-q="8">
+  <span class="competence">Valider</span>
+  <h3>8. La loi des nœuds est-elle respectée ? Vérifier en additionnant les trois intensités I<sub>1</sub>, I<sub>2</sub>, I<sub>3</sub> et en comparant à la valeur trouvée en Q5. <span class="pts">(3 pts)</span></h3>
+  <div class="brouillon">Additionne 0,4 + 0,3 + 0,5. Tu dois retrouver la même valeur que celle calculée en Q5.</div>
+  <div class="input-row">
+    <span>Somme =</span>
+    <input type="number" step="0.01" id="q8-input">
+    <span class="unite">A</span>
+    <button onclick="verifier(8)">Valider</button>
+  </div>
+  <div class="feedback" id="q8-feedback"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PARTIE 3 : Validation finale -->
+<!-- ============================================================ -->
+
+<div class="partie-titre">
+  Partie C — Validation de l'installation complète
+  <span class="pts-partie">4 points</span>
+</div>
+
+<p>Avant de livrer la bibliothèque au client, vous devez vérifier que l'<strong>intensité totale</strong> demandée au transformateur (bandeau supérieur + bandeau inférieur) ne dépasse pas <strong>I<sub>max</sub> = 2 A</strong> (limite indiquée sur la fiche technique).</p>
+
+<div class="question" data-q="9">
+  <span class="competence">Analyser</span>
+  <h3>9. Calculer l'<strong>intensité totale</strong> fournie par le transformateur lorsque les deux bandeaux sont allumés en même temps. <span class="pts">(2 pts)</span></h3>
+  <div class="brouillon">Le transformateur alimente les deux bandeaux. Additionne l'intensité du bandeau supérieur (mesurée 0,3 A en série) et l'intensité totale du bandeau inférieur (Q5).</div>
+  <div class="input-row">
+    <span>I<sub>transfo</sub> =</span>
+    <input type="number" step="0.01" id="q9-input">
+    <span class="unite">A</span>
+    <button onclick="verifier(9)">Valider</button>
+  </div>
+  <div class="feedback" id="q9-feedback"></div>
+</div>
+
+<div class="question" data-q="10">
+  <span class="competence">Valider</span>
+  <h3>10. L'installation est-elle <strong>conforme</strong> à la fiche technique du transformateur ? Justifier votre réponse en comparant l'intensité totale (Q9) à la valeur maximale (2 A). <span class="pts">(1,5 pt)</span></h3>
+  <div class="brouillon">Compare ta valeur de Q9 à 2 A. Si elle est inférieure, l'installation est conforme. Mentionne aussi la marge de sécurité (différence entre I_max et I_transfo).</div>
+  <textarea id="q10-input" placeholder="Indique l'intensité totale, compare-la à la limite de 2 A, conclus sur la conformité, et précise la marge de sécurité."></textarea>
+  <button onclick="verifier(10)">Valider</button>
+  <div class="feedback" id="q10-feedback"></div>
+</div>
+
+<div class="question" data-q="11">
+  <span class="competence">Analyser</span>
+  <h3>11. Le client souhaiterait <strong>ajouter un quatrième spot</strong> au bandeau inférieur, qui appellerait une intensité de 0,7 A. Cette modification est-elle réalisable sans changer le transformateur ? Justifier par un calcul. <span class="pts">(0,5 pt)</span></h3>
+  <div class="brouillon">Calcule la nouvelle intensité totale (I_transfo + 0,7 A) et compare-la à 2 A.</div>
+  <textarea id="q11-input" placeholder="Calcule la nouvelle intensité totale, compare-la à 2 A, et conclus sur la faisabilité (réalisable ou non)."></textarea>
+  <button onclick="verifier(11)">Valider</button>
+  <div class="feedback" id="q11-feedback"></div>
+</div>
+
+<script>
+const reponses = {
+  // PARTIE A — série (12V, 2 LED de 4V, R équilibrage, I=0,3A)
+  '1':  { val: 0.3, tol: 0.02, type: 'num' },    // I_LED2 (série)
+  '2':  { val: 0.3, tol: 0.02, type: 'num' },    // I_R (série)
+  '3':  { val: 4,   tol: 0.05, type: 'num' },    // U_R = 12 - 4 - 4 = 4V
+  '4':  { val: 12,  tol: 0.05, type: 'num' },    // somme = 12V
+
+  // PARTIE B — dérivation (12V, I1=0,4 ; I2=0,3 ; I3=0,5)
+  '5':  { val: 1.2, tol: 0.02, type: 'num' },    // I_total = 0,4+0,3+0,5
+  '6':  { val: 12,  tol: 0.05, type: 'num' },    // U_1 = 12V (dérivation)
+  '7':  { val: 12,  tol: 0.05, type: 'num' },    // U_2 = 12V (dérivation)
+  '8':  { val: 1.2, tol: 0.02, type: 'num' },    // somme = 1,2A
+
+  // PARTIE C — validation
+  '9':  { val: 1.5, tol: 0.02, type: 'num' },    // I_transfo = 0,3 + 1,2 = 1,5A
+
+  '10': {
+    type: 'texte',
+    motsClesGroupes: [
+      ['1.5', '1,5'],                                                    // intensité totale
+      ['2'],                                                              // limite
+      ['conforme', 'respecte', 'inférieur', 'inférieure', 'sous', 'en dessous', 'moins', 'ne dépasse', 'valide', 'ok'],  // jugement
+      ['marge', 'sécurité', '0.5', '0,5', 'différence', 'reste']         // marge de sécurité
+    ],
+    solution: "L'intensité totale est de 1,5 A, ce qui est inférieur à la limite de 2 A. L'installation est donc conforme. La marge de sécurité est de 0,5 A (2 − 1,5 = 0,5 A)."
+  },
+
+  '11': {
+    type: 'texte',
+    motsClesGroupes: [
+      ['2.2', '2,2'],                                                    // nouvelle intensité (1,5 + 0,7)
+      ['2'],                                                              // limite max
+      ['dépasse', 'supérieur', 'supérieure', 'plus', 'au-dessus', 'au-delà', 'pas réalisable', 'impossible', 'non réalisable', 'pas possible']
+    ],
+    solution: "La nouvelle intensité totale serait de 1,5 + 0,7 = 2,2 A, ce qui dépasse la limite de 2 A du transformateur. La modification n'est pas réalisable sans changer le transformateur."
+  }
+};
+
+const indices = {
+  '1': [
+    "💡 Indice 1 : Quelle est la caractéristique d'un circuit en SÉRIE concernant l'intensité ?",
+    "💡 Indice 2 : Dans un circuit en série, l'intensité est la MÊME en tout point.",
+    "💡 Indice 3 : I_LED2 = I_LED1 = 0,3 A."
+  ],
+  '2': [
+    "💡 Indice 1 : Pareil que la Q1 : circuit en série donc intensité identique partout.",
+    "💡 Indice 2 : I_R = I_LED1 = ?",
+    "💡 Indice 3 : I_R = 0,3 A."
+  ],
+  '3': [
+    "💡 Indice 1 : Loi des mailles : la somme des tensions des dipôles = tension du générateur.",
+    "💡 Indice 2 : 12 = U_LED1 + U_LED2 + U_R = 4 + 4 + U_R. Isole U_R.",
+    "💡 Indice 3 : U_R = 12 − 4 − 4 = ?"
+  ],
+  '4': [
+    "💡 Indice 1 : Additionne les trois tensions : U_LED1 (4 V) + U_LED2 (4 V) + U_R (Q3).",
+    "💡 Indice 2 : 4 + 4 + 4 = ?",
+    "💡 Indice 3 : Le résultat doit être 12 V (la tension du transformateur). C'est la vérification de la loi des mailles."
+  ],
+  '5': [
+    "💡 Indice 1 : Loi des nœuds : I_total = I_1 + I_2 + I_3.",
+    "💡 Indice 2 : I_total = 0,4 + 0,3 + 0,5.",
+    "💡 Indice 3 : 0,4 + 0,3 + 0,5 = ?"
+  ],
+  '6': [
+    "💡 Indice 1 : Quelle est la caractéristique d'un circuit en DÉRIVATION concernant la tension ?",
+    "💡 Indice 2 : En dérivation, chaque branche reçoit la même tension que le générateur.",
+    "💡 Indice 3 : U_1 = 12 V."
+  ],
+  '7': [
+    "💡 Indice 1 : Pareil que la Q6 : la LED 2 est sur une branche en dérivation comme la LED 1.",
+    "💡 Indice 2 : Toutes les branches reçoivent la tension du transformateur (12 V).",
+    "💡 Indice 3 : U_2 = 12 V."
+  ],
+  '8': [
+    "💡 Indice 1 : Additionne les trois intensités : I_1 (0,4 A) + I_2 (0,3 A) + I_3 (0,5 A).",
+    "💡 Indice 2 : 0,4 + 0,3 + 0,5 = ?",
+    "💡 Indice 3 : Tu dois retomber sur 1,2 A (même valeur qu'en Q5). C'est la vérification de la loi des nœuds."
+  ],
+  '9': [
+    "💡 Indice 1 : Le transformateur alimente les deux bandeaux. Donc I_transfo = I_haut + I_bas.",
+    "💡 Indice 2 : I_haut = 0,3 A (mesurée dans le bandeau supérieur en série) et I_bas = 1,2 A (calculée en Q5).",
+    "💡 Indice 3 : 0,3 + 1,2 = ?"
+  ],
+  '10': [
+    "💡 Indice 1 : Mentionne ta valeur de Q9 (1,5 A) et compare à la limite (2 A).",
+    "💡 Indice 2 : 1,5 A est INFÉRIEUR à 2 A → l'installation est conforme. Précise aussi la MARGE DE SÉCURITÉ.",
+    "💡 Indice 3 : Marge = 2 − 1,5 = 0,5 A. Phrase type : « L'intensité totale est de 1,5 A, inférieure à la limite de 2 A. L'installation est conforme avec une marge de sécurité de 0,5 A. »"
+  ],
+  '11': [
+    "💡 Indice 1 : Calcule la NOUVELLE intensité totale : I_transfo + 0,7 = 1,5 + 0,7 = ?",
+    "💡 Indice 2 : 1,5 + 0,7 = 2,2 A. Compare à la limite de 2 A.",
+    "💡 Indice 3 : 2,2 > 2 → la modification N'EST PAS réalisable. Phrase type : « La nouvelle intensité serait de 2,2 A, ce qui dépasse la limite de 2 A. La modification n'est pas réalisable. »"
+  ]
+};
+
+const essais = {};
+const validees = new Set();
+
+function arrondir(n) {
+  return Math.round(n * 100) / 100;
+}
+
+function majScore() {
+  document.getElementById('score').textContent = validees.size;
+}
+
+function afficherFeedback(qId, type, message) {
+  const fb = document.getElementById('q' + qId + '-feedback');
+  fb.className = 'feedback ' + type;
+  fb.innerHTML = message;
+  fb.style.display = 'block';
+}
+
+function verifierTexte(texte, groupes) {
+  if (!texte || texte.trim().length < 10) return false;
+  const t = texte.toLowerCase();
+  for (const groupe of groupes) {
+    let trouve = false;
+    for (const mot of groupe) {
+      if (t.includes(mot.toLowerCase())) {
+        trouve = true;
+        break;
+      }
+    }
+    if (!trouve) return false;
+  }
+  return true;
+}
+
+function verifier(qId) {
+  if (validees.has(qId)) return;
+
+  const rep = reponses[qId];
+  let estCorrect = false;
+
+  if (rep.type === 'texte') {
+    const input = document.getElementById('q' + qId + '-input');
+    const texte = input.value.trim();
+    if (texte.length < 10) {
+      afficherFeedback(qId, 'indice', "⚠️ Rédige une réponse plus complète avant de valider.");
+      return;
+    }
+    estCorrect = verifierTexte(texte, rep.motsClesGroupes);
+  } else {
+    const input = document.getElementById('q' + qId + '-input');
+    const val = parseFloat(input.value.replace(',', '.'));
+    if (isNaN(val)) {
+      afficherFeedback(qId, 'indice', "⚠️ Saisis un nombre avant de valider.");
+      return;
+    }
+    estCorrect = Math.abs(arrondir(val) - rep.val) <= rep.tol;
+  }
+
+  if (estCorrect) {
+    validees.add(qId);
+    majScore();
+    afficherFeedback(qId, 'correct', "✅ <strong>Bravo !</strong> Réponse correcte.");
+    const q = document.querySelector('[data-q="' + qId + '"]');
+    q.querySelectorAll('input, button, textarea').forEach(el => el.disabled = true);
+  } else {
+    essais[qId] = (essais[qId] || 0) + 1;
+    const numEssai = essais[qId];
+    const indicesQ = indices[qId];
+
+    if (numEssai <= indicesQ.length) {
+      const indice = indicesQ[numEssai - 1];
+      afficherFeedback(qId, 'indice',
+        "❌ Ce n'est pas la bonne réponse (ou il manque des éléments). <br><br>" + indice +
+        "<br><br><em>Reprends ton brouillon, refais le raisonnement, puis essaie à nouveau.</em>"
+      );
+    } else {
+      let solution;
+      if (rep.type === 'texte') {
+        solution = rep.solution;
+      } else {
+        solution = rep.val;
+      }
+      afficherFeedback(qId, 'solution',
+        "❌ Tous les indices ont été donnés. La réponse attendue est : <strong>" + solution + "</strong>."
+      );
+    }
+  }
+}
+</script>
+
+</body>
+</html>
